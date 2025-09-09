@@ -24,7 +24,7 @@ MKDD-Vul employs knowledge distillation to learn interaction information from th
 3. **Opcode sequences:**
    - Perform address filtering and normalization on the opcode sequence, and embeds the content using BERT.
 
-![workflow image](https://github.com/F1xedbot/RazorBlade/blob/main/RazorBlade_workflow.png?raw=true)
+![workflow image](https://github.com/1qq1p/MKDD-Vul/blob/main/model.png?raw=true)
 
 ## Impressive Results
 
@@ -42,5 +42,6 @@ python byte_im.py      # T2
 python op_trans.py     # T3
 python student3_2.py   # student model
 ```
+
 
 
