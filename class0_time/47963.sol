@@ -1,0 +1,37 @@
+pragma solidity ^0.4.18;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+contract token { function transfer(address receiver, uint amount){ receiver; amount; } }
+
+
+
+

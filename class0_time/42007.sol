@@ -1,0 +1,33 @@
+pragma solidity ^0.4.23;
+
+contract TimeLockedWallet is Ownable {
+	uint256 public unlockTime;
+
+	constructor(uint256 _unlockTime) 
+		public
+	{
+		unlockTime = _unlockTime;
+	}
+
+	function()
+		public
+		payable
+	{
+	}
+
+	function locked()
+		public
+		view
+		returns (bool)
+	{
+		return now <= unlockTime;
+	}
+
+	function claim()
+		external
+		onlyOwner
+	{
+		require(!locked());
+		selfdestruct(owner);
+	}	
+}

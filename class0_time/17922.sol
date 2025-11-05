@@ -1,0 +1,100 @@
+pragma solidity ^0.4.23;
+
+
+
+
+
+library SafeMath {
+
+  
+
+
+  function mul(uint256 a, uint256 b) internal pure returns (uint256 c) {
+    
+    
+    
+    if (a == 0) {
+      return 0;
+    }
+
+    c = a * b;
+    assert(c / a == b);
+    return c;
+  }
+
+  
+
+
+  function div(uint256 a, uint256 b) internal pure returns (uint256) {
+    
+    
+    
+    return a / b;
+  }
+
+  
+
+
+  function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+    assert(b <= a);
+    return a - b;
+  }
+
+  
+
+
+  function add(uint256 a, uint256 b) internal pure returns (uint256 c) {
+    c = a + b;
+    assert(c >= a);
+    return c;
+  }
+}
+
+
+
+
+
+
+contract MultiOwnable {
+    mapping (address => bool) owners;
+    address unremovableOwner;
+
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event OwnershipExtended(address indexed host, address indexed guest);
+    event OwnershipRemoved(address indexed removedOwner);
+
+    modifier onlyOwner() {
+        require(owners[msg.sender]);
+        _;
+    }
+
+    constructor() public {
+        owners[msg.sender] = true;
+        unremovableOwner = msg.sender;
+    }
+
+    function addOwner(address guest) onlyOwner public {
+        require(guest != address(0));
+        owners[guest] = true;
+        emit OwnershipExtended(msg.sender, guest);
+    }
+
+    function removeOwner(address removedOwner) onlyOwner public {
+        require(removedOwner != address(0));
+        require(unremovableOwner != removedOwner);
+        delete owners[removedOwner];
+        emit OwnershipRemoved(removedOwner);
+    }
+
+    function transferOwnership(address newOwner) onlyOwner public {
+        require(newOwner != address(0));
+        require(unremovableOwner != msg.sender);
+        owners[newOwner] = true;
+        delete owners[msg.sender];
+        emit OwnershipTransferred(msg.sender, newOwner);
+    }
+
+    function isOwner(address addr) public view returns(bool){
+        return owners[addr];
+    }
+}

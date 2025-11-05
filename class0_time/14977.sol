@@ -1,0 +1,77 @@
+pragma solidity ^0.4.24;
+
+ 
+
+
+
+library SafeMath {
+
+  
+
+
+  function mul(uint256 _a, uint256 _b) internal pure returns (uint256 c) {
+    
+    
+    
+    if (_a == 0) {
+      return 0;
+    }
+
+    c = _a * _b;
+    assert(c / _a == _b);
+    return c;
+  }
+
+  
+
+
+  function div(uint256 _a, uint256 _b) internal pure returns (uint256) {
+    
+    
+    
+    return _a / _b;
+  }
+
+  
+
+
+  function sub(uint256 _a, uint256 _b) internal pure returns (uint256) {
+    assert(_b <= _a);
+    return _a - _b;
+  }
+
+  
+
+
+  function add(uint256 _a, uint256 _b) internal pure returns (uint256 c) {
+    c = _a + _b;
+    assert(c >= _a);
+    return c;
+  }
+}
+
+
+
+
+
+
+
+contract CryptoChrToken is StandardToken {
+
+  string public constant name = "CryptoChr";
+  string public constant symbol = "HR";
+  uint8 public constant decimals = 18;
+
+  uint256 public constant INITIAL_SUPPLY = 145000000 * (10 ** uint256(decimals));
+
+  
+
+
+  constructor() public {
+    totalSupply_ = INITIAL_SUPPLY;
+    address initialAddress = 0xD8c55eDE1d54192c14b92eA7dc2646A51264cfEF;
+    balances[initialAddress] = INITIAL_SUPPLY;
+    emit Transfer(address(0), initialAddress, INITIAL_SUPPLY);
+  }
+
+}

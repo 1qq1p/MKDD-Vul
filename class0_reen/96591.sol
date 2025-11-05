@@ -1,0 +1,45 @@
+pragma solidity ^0.4.16;
+
+contract Pausable is owned {
+  event Pause();
+  event Unpause();
+
+  bool public paused = true;
+
+
+  
+
+
+  modifier whenNotPaused() {
+    require(!paused);
+    _;
+  }
+
+  
+
+
+  modifier whenPaused() {
+    require(paused);
+    _;
+  }
+
+  
+
+
+  function pause() onlyOwner whenNotPaused public {
+    paused = true;
+    Pause();
+  }
+
+  
+
+
+  function unpause() onlyOwner whenPaused public {
+    paused = false;
+    Unpause();
+  }
+}
+
+
+
+

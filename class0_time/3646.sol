@@ -1,0 +1,53 @@
+pragma solidity ^0.4.24;  
+
+
+library SafeMath {
+	function mul(uint a, uint b) internal pure returns(uint) {  
+		uint c = a * b;
+		assert(a == 0 || c / a == b);
+		return c;
+	}
+
+	function div(uint a, uint b) internal pure returns(uint) { 
+		uint c = a / b;
+		return c; 
+	}
+
+	function sub(uint a, uint b) internal pure returns(uint) {  
+		assert(b <= a);
+		return a - b;
+	}
+
+	function add(uint a, uint b) internal pure returns(uint) {  
+		uint c = a + b;
+		assert(c >= a);
+		return c;
+	}
+	function max64(uint64 a, uint64 b) internal pure  returns(uint64) { 
+		return a >= b ? a : b;
+	}
+
+	function min64(uint64 a, uint64 b) internal pure  returns(uint64) { 
+		return a < b ? a : b;
+	}
+
+	function max256(uint256 a, uint256 b) internal pure returns(uint256) { 
+		return a >= b ? a : b;
+	}
+
+	function min256(uint256 a, uint256 b) internal pure returns(uint256) {  
+		return a < b ? a : b;
+	}
+ 
+}
+
+contract ERC20 is ERC20Basic {
+	function allowance(address owner, address spender) public constant returns(uint);  
+	function transferFrom(address from, address to, uint value) public;  
+	function approve(address spender, uint value) public;  
+	event Approval(address indexed owner, address indexed spender, uint value);
+}
+
+
+
+

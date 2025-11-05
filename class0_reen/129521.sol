@@ -1,0 +1,180 @@
+pragma solidity 0.4.24;
+
+
+
+
+
+
+library SafeMath {
+    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
+        uint256 c = a * b;
+        require(a == 0 || c / a == b, "mul overflow");
+        return c;
+    }
+
+    function div(uint256 a, uint256 b) internal pure returns (uint256) {
+        require(b > 0, "div by 0"); 
+        uint256 c = a / b;
+        
+        return c;
+    }
+
+    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+        require(b <= a, "sub underflow");
+        return a - b;
+    }
+
+    function add(uint256 a, uint256 b) internal pure returns (uint256) {
+        uint256 c = a + b;
+        require(c >= a, "add overflow");
+        return c;
+    }
+
+    function roundedDiv(uint a, uint b) internal pure returns (uint256) {
+        require(b > 0, "div by 0"); 
+        uint256 z = a / b;
+        if (a % b >= b / 2) {
+            z++;  
+        }
+        return z;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+contract PreToken is Restricted {
+    using SafeMath for uint256;
+
+    uint public constant CHUNK_SIZE = 100;
+
+    string constant public name = "Augmint pretokens"; 
+    string constant public symbol = "APRE"; 
+    uint8 constant public decimals = 0; 
+
+    uint public totalSupply;
+
+    struct Agreement {
+        address owner;
+        uint balance;
+        uint32 discount; 
+        uint32 valuationCap; 
+    }
+
+    
+
+
+
+    mapping(address => bytes32) public agreementOwners; 
+    mapping(bytes32 => Agreement) public agreements;
+
+    bytes32[] public allAgreements; 
+
+    event Transfer(address indexed from, address indexed to, uint amount);
+
+    event NewAgreement(address owner, bytes32 agreementHash, uint32 discount, uint32 valuationCap);
+
+    constructor(address permissionGranterContract) public Restricted(permissionGranterContract) {} 
+
+    function addAgreement(address owner, bytes32 agreementHash, uint32 discount, uint32 valuationCap)
+    external restrict("PreTokenSigner") {
+        require(owner != address(0), "owner must not be 0x0");
+        require(agreementOwners[owner] == 0x0, "owner must not have an aggrement yet");
+        require(agreementHash != 0x0, "agreementHash must not be 0x0");
+        require(discount > 0, "discount must be > 0");
+        require(agreements[agreementHash].discount == 0, "agreement must not exist yet");
+
+        agreements[agreementHash] = Agreement(owner, 0, discount, valuationCap);
+        agreementOwners[owner] = agreementHash;
+        allAgreements.push(agreementHash);
+
+        emit NewAgreement(owner, agreementHash, discount, valuationCap);
+    }
+
+    function issueTo(bytes32 agreementHash, uint amount) external restrict("PreTokenSigner") {
+        Agreement storage agreement = agreements[agreementHash];
+        require(agreement.discount > 0, "agreement must exist");
+
+        agreement.balance = agreement.balance.add(amount);
+        totalSupply = totalSupply.add(amount);
+
+        emit Transfer(0x0, agreement.owner, amount);
+    }
+
+    
+    function burnFrom(bytes32 agreementHash, uint amount)
+    public restrict("PreTokenSigner") returns (bool) {
+        Agreement storage agreement = agreements[agreementHash];
+        require(agreement.discount > 0, "agreement must exist"); 
+        require(amount > 0, "burn amount must be > 0");
+        require(agreement.balance >= amount, "must not burn more than balance"); 
+
+        agreement.balance = agreement.balance.sub(amount);
+        totalSupply = totalSupply.sub(amount);
+
+        emit Transfer(agreement.owner, 0x0, amount);
+        return true;
+    }
+
+    function balanceOf(address owner) public view returns (uint) {
+        return agreements[agreementOwners[owner]].balance;
+    }
+
+    
+
+    function transfer(address to, uint amount) public returns (bool) { 
+        require(amount == agreements[agreementOwners[msg.sender]].balance, "must transfer full balance");
+        _transfer(msg.sender, to);
+        return true;
+    }
+
+    
+    function transferAgreement(bytes32 agreementHash, address to)
+    public restrict("PreTokenSigner") returns (bool) {
+        _transfer(agreements[agreementHash].owner, to);
+        return true;
+    }
+
+    
+    function _transfer(address from, address to) private {
+        Agreement storage agreement = agreements[agreementOwners[from]];
+        require(agreementOwners[from] != 0x0, "from agreement must exists");
+        require(agreementOwners[to] == 0, "to must not have an agreement");
+        require(to != 0x0, "must not transfer to 0x0");
+
+        agreement.owner = to;
+
+        agreementOwners[to] = agreementOwners[from];
+        agreementOwners[from] = 0x0;
+
+        emit Transfer(from, to, agreement.balance);
+    }
+
+    function getAgreementsCount() external view returns (uint agreementsCount) {
+        return allAgreements.length;
+    }
+
+    
+    
+    
+    function getAllAgreements(uint offset) external view returns(uint[6][CHUNK_SIZE] agreementsResult) {
+
+        for (uint8 i = 0; i < CHUNK_SIZE && i + offset < allAgreements.length; i++) {
+            bytes32 agreementHash = allAgreements[i + offset];
+            Agreement storage agreement = agreements[agreementHash];
+
+            agreementsResult[i] = [ i + offset, uint(agreement.owner), agreement.balance,
+                uint(agreementHash), uint(agreement.discount), uint(agreement.valuationCap)];
+        }
+    }
+}

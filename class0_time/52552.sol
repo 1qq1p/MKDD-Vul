@@ -1,0 +1,12 @@
+pragma solidity ^0.5.2;
+
+
+
+
+
+
+
+
+contract DxLockMgnForRep is ExternalLocking4Reputation {
+    constructor() public {}
+}

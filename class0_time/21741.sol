@@ -1,0 +1,127 @@
+pragma solidity ^0.4.24;
+
+contract PullRequests is Approvable {
+
+    address public DIDTokenAddress;
+    address public DistenseAddress;
+    address public TasksAddress;
+
+    struct PullRequest {
+        address contributor;
+        bytes32 taskId;
+        uint128 prNum;
+        uint256 pctDIDApproved;
+        mapping(address => bool) voted;
+    }
+
+    bytes32[] public pullRequestIds;
+
+    mapping(bytes32 => PullRequest) pullRequests;
+
+    event LogAddPullRequest(bytes32 _prId, bytes32 taskId, uint128 prNum);
+    event LogPullRequestApprovalVote(bytes32 _prId, uint256 pctDIDApproved);
+    event LogRewardPullRequest(bytes32 _prId, bytes32 taskId, uint128 prNum);
+
+    constructor (
+        address _DIDTokenAddress,
+        address _DistenseAddress,
+        address _TasksAddress
+    ) public {
+        DIDTokenAddress = _DIDTokenAddress;
+        DistenseAddress = _DistenseAddress;
+        TasksAddress = _TasksAddress;
+    }
+
+    function addPullRequest(bytes32 _prId, bytes32 _taskId, uint128 _prNum) external returns (bool) {
+        pullRequests[_prId].contributor = msg.sender;
+        pullRequests[_prId].taskId = _taskId;
+        pullRequests[_prId].prNum = _prNum;
+        pullRequestIds.push(_prId);
+
+        emit LogAddPullRequest(_prId, _taskId, _prNum);
+
+        return true;
+    }
+
+    function getPullRequestById(bytes32 _prId) external view returns (address, bytes32, uint128, uint256) {
+        PullRequest memory pr = pullRequests[_prId];
+        return (pr.contributor, pr.taskId, pr.prNum, pr.pctDIDApproved);
+    }
+
+    function getNumPullRequests() external view returns (uint256) {
+        return pullRequestIds.length;
+    }
+
+    function approvePullRequest(bytes32 _prId)
+        hasEnoughDIDToApprovePR
+        external
+    returns (uint256) {
+
+        require(pullRequests[_prId].voted[msg.sender] == false, "voter already voted on this PR");
+        require(pullRequests[_prId].contributor != msg.sender, "contributor voted on their PR");
+        Distense distense = Distense(DistenseAddress);
+        DIDToken didToken = DIDToken(DIDTokenAddress);
+
+        PullRequest storage _pr = pullRequests[_prId];
+
+        
+        _pr.voted[msg.sender] = true;
+
+        
+        
+        _pr.pctDIDApproved += didToken.pctDIDOwned(msg.sender) > distense.getParameterValueByTitle(
+            distense.votingPowerLimitParameterTitle()
+        ) ? distense.getParameterValueByTitle(
+            distense.votingPowerLimitParameterTitle()
+        ) : didToken.pctDIDOwned(msg.sender);
+
+        if (
+            _pr.pctDIDApproved > distense.getParameterValueByTitle(
+                distense.pctDIDRequiredToMergePullRequestTitle()
+            )
+        ) {
+            Tasks tasks = Tasks(TasksAddress);
+
+            uint256 reward;
+            Tasks.RewardStatus rewardStatus;
+            (reward, rewardStatus) = tasks.getTaskRewardAndStatus(_pr.taskId);
+
+            require(rewardStatus != Tasks.RewardStatus.PAID);
+            Tasks.RewardStatus updatedRewardStatus = tasks.setTaskRewardPaid(_pr.taskId);
+
+            
+            require(updatedRewardStatus == Tasks.RewardStatus.PAID);
+            didToken.rewardContributor(_pr.contributor, reward);
+
+            emit LogRewardPullRequest(_prId, _pr.taskId, _pr.prNum);
+        }
+
+        emit LogPullRequestApprovalVote(_prId, _pr.pctDIDApproved);
+        return _pr.pctDIDApproved;
+    }
+
+    modifier hasEnoughDIDToApprovePR() {
+
+        Distense distense = Distense(DistenseAddress);
+        uint256 threshold = distense.getParameterValueByTitle(
+            distense.numDIDRequiredToApproveVotePullRequestParameterTitle()
+        );
+
+        DIDToken didToken = DIDToken(DIDTokenAddress);
+
+        require(didToken.getNumContributionsDID(msg.sender) > threshold);
+        _;
+    }
+
+    function setDIDTokenAddress(address _DIDTokenAddress) public onlyApproved {
+        DIDTokenAddress = _DIDTokenAddress;
+    }
+
+    function setDistenseAddress(address _DistenseAddress) public onlyApproved {
+        DistenseAddress = _DistenseAddress;
+    }
+
+    function setTasksAddress(address _TasksAddress) public onlyApproved {
+        TasksAddress = _TasksAddress;
+    }
+}
