@@ -242,7 +242,7 @@ def train_trans_main():
         'vuln_folder': 'E:\Cross-Modality-Bug-Detection-main\dataset1\\opcode\\undependency_reen',  # 漏洞合约文件夹
         'normal_folder': 'E:\Cross-Modality-Bug-Detection-main\dataset1\\opcode\dependency_reen',  # 正常合约文件夹
         'bert_path': 'D:\\bert-base-uncased',  # 本地BERT模型路径
-        'max_seq_length': 100,  # 根据你的数据调整
+        'max_seq_length': 1024,  # 根据你的数据调整
         'batch_size': 64,
         'embedding_dim': 768,
         'num_heads': 4,
